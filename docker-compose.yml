@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n-jobalert
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Asia/Amman
+      # Set N8N_ENCRYPTION_KEY to a fixed random string before first run.
+      # If left unset, n8n auto-generates one — but if it changes later,
+      # all saved credentials become unreadable.
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-change_me_to_random_string}
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:
+    name: jobalert_n8n_data

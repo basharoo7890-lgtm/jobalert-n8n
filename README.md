@@ -93,6 +93,7 @@ Any node failure → Global Error Handler
 ├── workflows/
 │   ├── Alert_Job.json              # Main workflow
 │   └── Global_Error_Handler.json   # Error monitoring workflow
+├── docker-compose.yml          # Self-hosted n8n (optional)
 ├── README.md
 ├── LICENSE
 └── .gitignore
@@ -110,6 +111,21 @@ Any node failure → Global Error Handler
 - Groq API key (free at [console.groq.com](https://console.groq.com))
 - Google account with Sheets access
 - rss.app account with a LinkedIn job search RSS feed
+
+### Self-hosted n8n (optional — skip if using n8n Cloud)
+
+A ready-to-use `docker-compose.yml` is included in this repo. It only runs **n8n itself** — it does not containerize this workflow (workflows are JSON configuration imported into a running n8n instance, not a standalone application).
+
+```bash
+# Set a fixed encryption key (recommended — see comment in docker-compose.yml)
+export N8N_ENCRYPTION_KEY=$(openssl rand -hex 32)
+
+docker compose up -d
+```
+
+n8n will be available at `http://localhost:5678`. Create your owner account on first visit, then continue with the import steps below.
+
+> ⚠️ If `N8N_ENCRYPTION_KEY` is not set explicitly, n8n generates one automatically on first run. Losing or changing it later makes all saved credentials unreadable — back up your `.env` value.
 
 ### 2. Import Workflows
 1. Open n8n → **Workflows** → **Import from file**
@@ -208,6 +224,19 @@ Any failure in the main workflow triggers an immediate Telegram message containi
 - [ ] Add `intermediate` / `junior` keyword boosting
 - [ ] Weekly digest mode (batch alerts)
 - [ ] Application tracker integration (update status in Sheets via Telegram commands)
+
+---
+
+## 🛠️ Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| No Telegram alerts arriving, no errors in n8n | RSS feed not updating, or all jobs filtered out | Open `LinkedIn RSS Feed` node → Execute node manually → check if items return. If empty, regenerate the feed on rss.app (free-tier feeds can stop refreshing). |
+| Workflow fails at `Groq Chat Model` node | Groq free-tier rate limit hit (requests/min or tokens/day) | Check [console.groq.com](https://console.groq.com) usage dashboard. The `Cool-down Period` node (3s) helps but doesn't eliminate this on high-volume days — consider increasing the wait time. |
+| Same job sent twice | `Job_ID` extraction failed and produced an inconsistent ID, so dedup lookup in Google Sheets missed it | Open `Transform & Clean Job Data` → check the `Job_ID` output for that specific job's link. The regex expects an 8+ digit numeric ID in the URL; some non-standard LinkedIn URLs can break this. |
+| `Telegram Alert Dispatcher` fails with 400 error | `chatId` not set, or bot not started by the user | Confirm `chatId` is your numeric Telegram ID (not username), and that you've sent `/start` to your bot at least once. |
+| Error Handler doesn't trigger on failure | `errorWorkflow` ID mismatch | In `Alert_Job` → workflow Settings → confirm `Error Workflow` points to your imported `Global_Error_Handler` (the ID changes on import — reselect it from the dropdown, don't rely on the old JSON value). |
+| Google Sheets node fails with permission error | OAuth2 credential not authorized for that specific Sheet | Re-run the OAuth flow in n8n credentials, and make sure the Google account used has edit access to the target Sheet. |
 
 ---
 
