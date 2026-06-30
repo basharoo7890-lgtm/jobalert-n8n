@@ -1,7 +1,6 @@
 # 🚀 JobAlert — Automated DevOps Job Hunter
 
-> نظام أتمتة ذكي يراقب LinkedIn كل 6 ساعات، يُصفّي وظائف DevOps المناسبة بالذكاء الاصطناعي، ويرسل تنبيهاً فورياً على Telegram — مع نظام مراقبة للأخطاء.
-
+An intelligent automation system that monitors LinkedIn every 6 hours, uses AI to filter relevant DevOps job postings, and sends instant notifications via Telegram — with an error monitoring system.
 ---
 
 ## 📌 Overview
