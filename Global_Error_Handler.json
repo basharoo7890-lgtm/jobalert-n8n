@@ -1,0 +1,67 @@
+{
+  "name": "Global Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -16
+      ],
+      "id": "1ca0e293-e164-4107-94ec-2b8c928472e4",
+      "name": "Error Trigger",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=⚠️ <b>فشل في نظام أتمتة الوظائف</b>\n\n<b>اسم سير العمل:</b> {{ $json.workflow.name }}\n<b>رسالة الخطأ:</b> <code>{{ $json.execution.error.message }}</code>\n<b>رابط المعاينة:</b> <a href=\"{{ $json.execution.url }}\">اضغط هنا لفحص التنفيذ</a>",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        -16
+      ],
+      "id": "51a238dc-1ed8-4b2a-bf0a-e2865c0817e3",
+      "name": "Send a text message",
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "38c26ff4-3ebe-47a3-9c37-79cea8a3de62",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "NMP14cw2WPp83gXU",
+  "tags": []
+}

@@ -1,0 +1,557 @@
+{
+  "name": "Alert Job",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "17b429c2-3699-4022-9bed-980a72ba8b53",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://rss.app/feeds/KSEgjx1RvULGxMvv.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "08a4cbe2-204c-4a7f-ba01-c2f0b1f77cc4",
+      "name": "Read Linkedin Jobs RSS2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// الوصول إلى البيانات الثابتة للسير الحالي\nconst staticData = $getWorkflowStaticData('global');\n\n// إعادة ضبط عداد الأخطاء إلى الصفر\nstaticData.errorCount = 0;\n\n// تمرير البيانات الواردة كما هي لضمان عدم توقف السير\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        0
+      ],
+      "id": "12ceed50-b3c9-48d6-8f4b-3d7d8fcb3000",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        928,
+        208
+      ],
+      "id": "9d2d9546-bd1f-42bf-a449-ab156d771ca0",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "YOUR_GROQ_CREDENTIAL_ID",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1rKfH3lUNKIxI-SoLM7eAWXjc6TER5MnSW0eNPmcKnPM",
+          "mode": "list",
+          "cachedResultName": "JobAlert",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rKfH3lUNKIxI-SoLM7eAWXjc6TER5MnSW0eNPmcKnPM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "الورقة1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rKfH3lUNKIxI-SoLM7eAWXjc6TER5MnSW0eNPmcKnPM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ab34fc11-4c46-4614-903f-12d103795614",
+      "name": "Read Stored Job IDs",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "186ab2b6-84fc-4935-9e87-aee6db777d2c",
+              "name": "Title",
+              "value": "={{ $json.title || 'N/A'}}",
+              "type": "string"
+            },
+            {
+              "id": "61196fd8-48b2-4112-a679-f53e570f46f4",
+              "name": "Company",
+              "value": "={{ $json.title.split('شركة')[1]?.split('بالتوظيف')[0]?.trim() || 'N/A'  .replace(/[^\\x20-\\x7E\\u0600-\\u06FF]/g, '')}}",
+              "type": "string"
+            },
+            {
+              "id": "afb5d255-8c0f-42c1-a907-d97b77b3f4b3",
+              "name": "Job_ID",
+              "value": "={{ $json.link.split('-').pop().split('?')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "9a43684b-f3b2-4f12-bb5b-b584fa377388",
+              "name": "Source",
+              "value": "LinkedIn",
+              "type": "string"
+            },
+            {
+              "id": "9610d405-146c-4bc9-8be6-e11d93542978",
+              "name": "SentAt",
+              "value": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "29307fb6-0f5c-4e95-9b68-4be57a82c5c7",
+              "name": "Link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "4b3e5ec6-6dd0-4e72-9fb4-d54e8cd64efa",
+              "name": "Published_Date",
+              "value": "={{ ($json.isoDate || $json.pubDate).toDateTime().format('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "5bb2c561-0707-4a34-8e1f-c9d162504b78",
+              "name": "Location",
+              "value": "={{ $json.title.split('في')[1]?.trim().split(/\\s+/).filter((word, index, self) => self.indexOf(word) === index).join(' ') || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "5040bbd9-ccb4-4625-8674-443b85dd577f",
+              "name": "Application_Status",
+              "value": "To Apply",
+              "type": "string"
+            },
+            {
+              "id": "b088c962-aec7-4817-b23b-986014cbb829",
+              "name": "Full_Description",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        0
+      ],
+      "id": "075c0d22-83aa-4cd3-8b9d-f028d886ab11",
+      "name": "Transform & Clean Job Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. جلب كافة العناصر من عقدة جوجل شيت لمنع التكرار\nconst inputItems = $items(\"Read Stored Job IDs\");\nconst oldJobIds = inputItems\n    .filter(item => item.json && item.json.Job_ID)\n    .map(item => item.json.Job_ID.toString());\n\n// 2. مصفوفات ذكية (Smart Arrays) للبحث الدلالي\n// أ. المسميات والمفاهيم العامة\nconst concepts = [\"devops\", \"cloud\", \"sre\", \"platform\", \"infrastructure\", \"automation\", \"ci/cd\"];\n// ب. الأدوات والتقنيات (Tools & Tech Stack) - هذا هو المفتاح الجديد\nconst tools = [\"kubernetes\", \"docker\", \"terraform\", \"ansible\", \"jenkins\", \"gitlab ci\", \"aws\", \"azure\", \"gcp\", \"linux\", \"bash\", \"python\"];\n\n// ج. الكلمات المستبعدة (الأقدمية العالية)\nconst seniorKeywords = [\"senior\", \"lead\", \"manager\", \"head\", \"architect\", \"principal\"];\n\n// 3. دالة التصفية الرئيسية\nreturn items.filter(item => {\n    // توحيد النصوص\n    const title = (item.json.Title || \"\").toLowerCase();\n    const description = (item.json.Full_Description || \"\").toLowerCase();\n    const fullText = title + \" \" + description;\n    const jobId = item.json.Job_ID?.toString();\n\n    // أ. البحث عن المفاهيم (Concepts)\n    const hasConcept = concepts.some(keyword => fullText.includes(keyword));\n    \n    // ب. البحث عن الأدوات (Tools) - تقنية استخراج المهارات\n    // نطلب وجود أداة واحدة على الأقل لضمان صلة الوظيفة بـ DevOps\n    let toolsMatched = 0;\n    tools.forEach(tool => {\n        if (fullText.includes(tool)) toolsMatched++;\n    });\n    const hasTools = toolsMatched >= 1; // يكفي وجود أداة واحدة للعبور\n\n    // ج. التحقق من الأقدمية الصريحة بالكلمات (Explicit Seniority)\n    const hasSeniorWord = seniorKeywords.some(keyword => fullText.includes(keyword));\n\n    // د. التحقق من الخبرة بالأرقام (Numerical Experience)\n    const expRegex = /(\\d+)\\s*(year|yr|yrs|سنة|سنوات)/gi;\n    let maxYearsDetected = 0;\n    let match;\n    while ((match = expRegex.exec(fullText)) !== null) {\n        maxYearsDetected = Math.max(maxYearsDetected, parseInt(match[1]));\n    }\n    // نستبعدها فقط إذا كانت الأرقام أعلى من 6 سنوات (أو أي رقم تراه مناسباً كحد أقصى للمستوى المتوسط/المبتدئ)\n    const isTooSeniorByNumber = maxYearsDetected > 6;\n\n    // هـ. التحقق من التكرار\n    const isNewJob = !oldJobIds.includes(jobId);\n\n    // المنطق النهائي للمرور (The Final Gate)\n    // يجب أن تكون الوظيفة غير مكررة + ليست لمدير/خبير (بالكلمات أو الأرقام)\n    // ويجب أن تحتوي إما على مسمى صريح (Concepts) أو أدوات تقنية (Tools)\n    const isRelevant = hasConcept || hasTools;\n    const isAppropriateLevel = !hasSeniorWord && !isTooSeniorByNumber;\n\n    // ملاحظة هامة: إذا لم يتم العثور على أرقام أو كلمات خبرة، ستعتبر الوظيفة مقبولة وتمر للذكاء الاصطناعي\n    return isRelevant && isAppropriateLevel && isNewJob;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "e8edadb8-bf9a-478f-b441-a50ba528ff11",
+      "name": "Job Qualification Filter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=الوظيفة: {{ $json.Title }} / التفاصيل: {{ $json.Full_Description }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "أنت خبير تقني في تحليل وظائف DevOps و Cloud Infrastructure.\nسأقوم بتزويدك بعنوان الوظيفة ووصفها الكامل (يحتوي على وسوم HTML، تجاهلها).\n\nمهمتك هي استخراج التلخيص التالي باللغة العربية حصراً:\n\nالخبرة المطلوبة: ابحث عن أي أرقام (مثل 3-5 years) أو صغها بناءً على مستوى المهام. (مثال: خبرة متوسطة، 3 إلى 5 سنوات).\n\nأهم التقنيات (Tech Stack): استخرج فقط أدوات (DevOps/Cloud/Infra) المذكورة (مثل AWS, Linux, Python). اذكرها كنقاط بالإنجليزية.\n\nطبيعة الدور: لخص المسؤولية الأساسية للوظيفة في جملة واحدة (مثال: أتمتة البنية التحتية وإدارتها).\n\nقواعد صارمة:\n\nلا تضف أي مقدمات أو خاتمات (مثل: \"مرحباً، إليك الملخص\").\n\nحافظ على تنسيق واضح ومباشر ليتم إرساله عبر تيليجرام.\n\nإذا لم تتوفر معلومة، اكتب: \"غير مذكور صراحة، ولكن يُستنتج من المهام...\"."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "a3159982-c5b6-4da6-bda5-299cd2bed4f4",
+      "name": "Analyze & Summarize Role"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c9c65314-aa0d-496d-acaa-4bbab57528e4",
+              "name": "telegram_message",
+              "value": "=🚀 <b>تنبيه وظيفة DevOps جديدة!</b>\n\n<b>المسمى الوظيفي:</b> {{ $('Transform & Clean Job Data').item.json.Title }}\n<b>الشركة:</b> 🏢 {{ $('Transform & Clean Job Data').item.json.Company }}\n\n---\n<b>🤖 ملخص الذكاء الاصطناعي (AI Summary):</b>\n{{ $('Analyze & Summarize Role').item.json.output || \"تحليل المتطلبات التقنية متاح عبر رابط التقديم أدناه.\" }}\n---\n\n<b>📍 الموقع:</b> {{ $('Transform & Clean Job Data').item.json.Location }}\n<b>📅 التاريخ:</b> {{ $('Transform & Clean Job Data').item.json.Published_Date }}\n🔗 رابط التقديم (Apply Link):\n{{ $('Transform & Clean Job Data').item.json.Link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        0
+      ],
+      "id": "f5dc4908-2b08-4512-927d-f8dd62c7e25c",
+      "name": "Message Builder"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.telegram_message }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "التقديم الآن 🚀",
+                    "additionalFields": {
+                      "url": "={{ $('Transform & Clean Job Data').item.json.Link }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1632,
+        0
+      ],
+      "id": "3e8d04fc-31d2-4596-90e0-80320b1250b1",
+      "name": "Telegram Alert Dispatcher",
+      "webhookId": "bd499547-1bc7-459a-8451-d3db850a51d2",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1rKfH3lUNKIxI-SoLM7eAWXjc6TER5MnSW0eNPmcKnPM",
+          "mode": "list",
+          "cachedResultName": "JobAlert",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rKfH3lUNKIxI-SoLM7eAWXjc6TER5MnSW0eNPmcKnPM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "الورقة1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rKfH3lUNKIxI-SoLM7eAWXjc6TER5MnSW0eNPmcKnPM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Job_ID": "={{ $('Job Qualification Filter').item.json.Job_ID }}",
+            "Link": "={{ $('Job Qualification Filter').item.json.Link }}",
+            "Published_Date": "={{ $('Job Qualification Filter').item.json.Published_Date }}",
+            "Company": "={{ $('Job Qualification Filter').item.json.Company }}",
+            "Location": "={{ $('Job Qualification Filter').item.json.Location }}",
+            "SentAt": "={{ $('Job Qualification Filter').item.json.SentAt }}",
+            "Source": "={{ $('Job Qualification Filter').item.json.Source }}",
+            "Application_Status": "={{ $('Job Qualification Filter').item.json.Application_Status }}",
+            "Job_Title": "={{ $('Job Qualification Filter').item.json.Title }}",
+            "AI_Analysis": "{{ $('Analyze & Summarize Role').item.json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job_ID",
+              "displayName": "Job_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job_Title",
+              "displayName": "Job_Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Published_Date",
+              "displayName": "Published_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SentAt",
+              "displayName": "SentAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Application_Status",
+              "displayName": "Application_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Analysis",
+              "displayName": "AI_Analysis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1872,
+        0
+      ],
+      "id": "d205e8eb-af7d-48af-aa98-72c568d3377a",
+      "name": "Log Sent Jobs to DB",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Stored Job IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Linkedin Jobs RSS2": {
+      "main": [
+        [
+          {
+            "node": "Transform & Clean Job Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze & Summarize Role",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Stored Job IDs": {
+      "main": [
+        [
+          {
+            "node": "Read Linkedin Jobs RSS2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform & Clean Job Data": {
+      "main": [
+        [
+          {
+            "node": "Job Qualification Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Qualification Filter": {
+      "main": [
+        [
+          {
+            "node": "Analyze & Summarize Role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze & Summarize Role": {
+      "main": [
+        [
+          {
+            "node": "Message Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Builder": {
+      "main": [
+        [
+          {
+            "node": "Telegram Alert Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Alert Dispatcher": {
+      "main": [
+        [
+          {
+            "node": "Log Sent Jobs to DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Sent Jobs to DB": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "NMP14cw2WPp83gXU"
+  },
+  "versionId": "a17190b4-310b-444c-b33a-c6c0ab071ef0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "TNxH4zKKBXyUnQHI",
+  "tags": []
+}

@@ -1,0 +1,11 @@
+# n8n local exports / backups
+*.backup.json
+.n8n/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment secrets if you add a .env later
+.env
+.env.local
